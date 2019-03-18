@@ -21,6 +21,7 @@
 #include "MMKVLog.h"
 #include "native-bridge.h"
 #include <string>
+#include <stdarg.h>
 
 #ifdef ENABLE_MMKV_LOG
 
@@ -69,7 +70,7 @@ void _MMKVLogWithLevel(
         } else {
             message.resize(length, '\0');
             va_start(args, format);
-            std::vsnprintf(message.data(), length + 1, format, args);
+            std::vsnprintf((char *)message.data(), length + 1, format, args);
             va_end(args);
         }
 

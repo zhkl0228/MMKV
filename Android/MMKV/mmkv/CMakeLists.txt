@@ -5,7 +5,8 @@
 
 cmake_minimum_required(VERSION 3.4.1)
 
-set(CMAKE_CXX_FLAGS "-std=c++1z -fno-exceptions -fvisibility=hidden -fno-unwind-tables -fno-asynchronous-unwind-tables")
+set(CMAKE_CXX_FLAGS "-std=c++11 -fno-exceptions -fvisibility=hidden -fno-unwind-tables -fno-asynchronous-unwind-tables")
+set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 
 find_package(JNI REQUIRED)
 include_directories(${JAVA_INCLUDE_PATH})
