@@ -21,6 +21,7 @@
 #ifndef MMKV_MMBUFFER_H
 #define MMKV_MMBUFFER_H
 
+#include <stddef.h>
 #include <cstdint>
 
 enum MMBufferCopyFlag : bool {

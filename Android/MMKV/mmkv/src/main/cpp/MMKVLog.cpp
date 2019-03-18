@@ -76,7 +76,7 @@ void _MMKVLogWithLevel(
         if (g_isLogRedirecting) {
             mmkvLog((int) level, file, line, func, message);
         } else {
-            __android_log_print(MMKVLogLevelDesc(level), APPNAME, "<%s:%d::%s> %s", file, line,
+            printf("<%s:%d::%s> %s\n", file, line,
                                 func, message.c_str());
         }
     }

@@ -21,10 +21,24 @@
 #ifndef MMKV_MMKVLOG_H
 #define MMKV_MMKVLOG_H
 
-#include <android/log.h>
 #include <cstdint>
 #include <cstring>
 #include <errno.h>
+
+/*
+ * Android log priority values, in ascending priority order.
+ */
+typedef enum android_LogPriority {
+    ANDROID_LOG_UNKNOWN = 0,
+    ANDROID_LOG_DEFAULT,    /* only for SetMinPriority() */
+    ANDROID_LOG_VERBOSE,
+    ANDROID_LOG_DEBUG,
+    ANDROID_LOG_INFO,
+    ANDROID_LOG_WARN,
+    ANDROID_LOG_ERROR,
+    ANDROID_LOG_FATAL,
+    ANDROID_LOG_SILENT,     /* only for SetMinPriority(); must be last */
+} android_LogPriority;
 
 enum MMKVLogLevel : uint32_t {
     MMKVLogDebug = 0, // not available for release/product build
