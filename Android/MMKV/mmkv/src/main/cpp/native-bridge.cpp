@@ -265,27 +265,6 @@ extern "C" JNIEXPORT JNICALL jlong Java_com_tencent_mmkv_MMKV_getDefaultMMKV(JNI
     return (jlong) kv;
 }
 
-extern "C" JNIEXPORT JNICALL jlong Java_com_tencent_mmkv_MMKV_getMMKVWithAshmemFD(
-    JNIEnv *env, jobject obj, jstring mmapID, jint fd, jint metaFD, jstring cryptKey) {
-    MMKV *kv = nullptr;
-    if (!mmapID || fd < 0 || metaFD < 0) {
-        return (jlong) kv;
-    }
-    string id = jstring2string(env, mmapID);
-
-    if (cryptKey) {
-        string crypt = jstring2string(env, cryptKey);
-        if (crypt.length() > 0) {
-            kv = MMKV::mmkvWithAshmemFD(id, fd, metaFD, &crypt);
-        }
-    }
-    if (!kv) {
-        kv = MMKV::mmkvWithAshmemFD(id, fd, metaFD, nullptr);
-    }
-
-    return (jlong) kv;
-}
-
 extern "C" JNIEXPORT JNICALL jstring Java_com_tencent_mmkv_MMKV_mmapID(JNIEnv *env,
                                                                        jobject instance) {
     MMKV *kv = getMMKV(env, instance);
@@ -293,24 +272,6 @@ extern "C" JNIEXPORT JNICALL jstring Java_com_tencent_mmkv_MMKV_mmapID(JNIEnv *e
         return string2jstring(env, kv->mmapID());
     }
     return nullptr;
-}
-
-extern "C" JNIEXPORT JNICALL jint Java_com_tencent_mmkv_MMKV_ashmemFD(JNIEnv *env,
-                                                                      jobject instance) {
-    MMKV *kv = getMMKV(env, instance);
-    if (kv) {
-        return kv->ashmemFD();
-    }
-    return -1;
-}
-
-extern "C" JNIEXPORT JNICALL jint Java_com_tencent_mmkv_MMKV_ashmemMetaFD(JNIEnv *env,
-                                                                          jobject instance) {
-    MMKV *kv = getMMKV(env, instance);
-    if (kv) {
-        return kv->ashmemMetaFD();
-    }
-    return -1;
 }
 
 extern "C" JNIEXPORT JNICALL jboolean Java_com_tencent_mmkv_MMKV_encodeBool(
