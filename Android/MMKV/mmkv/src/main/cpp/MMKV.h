@@ -33,13 +33,11 @@
 
 class CodedOutputData;
 class MMBuffer;
-class AESCrypt;
 
 enum MMKVMode : uint32_t {
     MMKV_SINGLE_PROCESS = 0x1,
     MMKV_MULTI_PROCESS = 0x2,
     CONTEXT_MODE_MULTI_PROCESS = 0x4, // in case someone mistakenly pass Context.MODE_MULTI_PROCESS
-    MMKV_ASHMEM = 0x8,
 };
 
 class MMKV {
@@ -52,7 +50,6 @@ class MMKV {
     size_t m_size;
     size_t m_actualSize;
     CodedOutputData *m_output;
-    MmapedFile *m_ashmemFile;
 
     bool m_needLoadFromFile;
     bool m_hasFullWriteback;
@@ -61,7 +58,7 @@ class MMKV {
     MmapedFile m_metaFile;
     MMKVMetaInfo m_metaInfo;
 
-    AESCrypt *m_crypter;
+    void *m_crypter;
 
     ThreadLock m_lock;
     FileLock m_fileLock;
@@ -71,8 +68,6 @@ class MMKV {
     void loadFromFile();
 
     void partialLoadFromFile();
-
-    void loadFromAshmem();
 
     void checkLoadData();
 
@@ -112,11 +107,6 @@ public:
          std::string *cryptKey,
          std::string *relativePath);
 
-    MMKV(const std::string &mmapID,
-         int ashmemFD,
-         int ashmemMetaFd,
-         std::string *cryptKey = nullptr);
-
     ~MMKV();
 
     static void initializeMMKV(const std::string &rootDir);
@@ -132,22 +122,13 @@ public:
                             std::string *cryptKey = nullptr,
                             std::string *relativePath = nullptr);
 
-    static MMKV *mmkvWithAshmemFD(const std::string &mmapID,
-                                  int fd,
-                                  int metaFD,
-                                  std::string *cryptKey = nullptr);
-
     static void onExit();
 
     const std::string &mmapID();
 
     const bool m_isInterProcess;
-
+  
     const bool m_isAshmem;
-
-    int ashmemFD() { return m_isAshmem ? m_fd : -1; }
-
-    int ashmemMetaFD() { return m_isAshmem ? m_metaFile.getFd() : -1; }
 
     std::string cryptKey();
 

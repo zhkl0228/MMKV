@@ -51,13 +51,6 @@ add_library( # Sets the name of the library.
              src/main/cpp/ThreadLock.h
              src/main/cpp/ThreadLock.cpp
              src/main/cpp/MMKVMetaInfo.hpp
-             src/main/cpp/aes/AESCrypt.h
-             src/main/cpp/aes/AESCrypt.cpp
-             src/main/cpp/aes/openssl/aes.h
-             src/main/cpp/aes/openssl/aes_cfb.c
-             src/main/cpp/aes/openssl/aes_core.c
-             src/main/cpp/aes/openssl/aes_locl.h
-             src/main/cpp/aes/openssl/cfb128.c
              src/main/cpp/aes/openssl/modes.h
              src/main/cpp/aes/openssl/opensslconf.h
              src/main/cpp/aes/openssl/md5_dgst.c
