@@ -61,7 +61,6 @@ class MMKV {
 
     void *m_crypter;
 
-    ThreadLock m_lock;
     FileLock m_fileLock;
     InterProcessLock m_sharedProcessLock;
     InterProcessLock m_exclusiveProcessLock;
