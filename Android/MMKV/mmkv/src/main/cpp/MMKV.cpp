@@ -88,12 +88,11 @@ MMKV::MMKV(
 
     m_crcDigest = 0;
 
-    m_sharedProcessLock.m_enable = m_isInterProcess;
-    m_exclusiveProcessLock.m_enable = m_isInterProcess;
+    m_sharedProcessLock.m_enable = false;
+    m_exclusiveProcessLock.m_enable = false;
 
     // sensitive zone
     {
-        SCOPEDLOCK(m_sharedProcessLock);
         loadFromFile();
     }
 }
@@ -173,8 +172,6 @@ const std::string &MMKV::mmapID() {
 }
 
 std::string MMKV::cryptKey() {
-    SCOPEDLOCK(m_lock);
-
     return "";
 }
 
@@ -350,7 +347,6 @@ void MMKV::checkLoadData() {
 
 void MMKV::clearAll() {
     MMKVInfo("cleaning all key-values from [%s]", m_mmapID.c_str());
-    SCOPEDLOCK(m_lock);
     SCOPEDLOCK(m_exclusiveProcessLock);
 
     if (m_needLoadFromFile) {
@@ -384,7 +380,6 @@ void MMKV::clearAll() {
 
 void MMKV::clearMemoryState() {
     MMKVInfo("clearMemoryState [%s]", m_mmapID.c_str());
-    SCOPEDLOCK(m_lock);
     if (m_needLoadFromFile) {
         return;
     }
@@ -418,7 +413,6 @@ void MMKV::clearMemoryState() {
 void MMKV::close() {
     MMKVInfo("close [%s]", m_mmapID.c_str());
     SCOPEDLOCK(g_instanceLock);
-    SCOPEDLOCK(m_lock);
 
     auto itr = g_instanceDic->find(m_mmapID);
     if (itr != g_instanceDic->end()) {
@@ -428,7 +422,6 @@ void MMKV::close() {
 }
 
 void MMKV::trim() {
-    SCOPEDLOCK(m_lock);
     MMKVInfo("prepare to trim %s", m_mmapID.c_str());
 
     checkLoadData();
@@ -563,7 +556,6 @@ bool MMKV::setDataForKey(MMBuffer &&data, const std::string &key) {
     if (data.length() == 0 || key.empty()) {
         return false;
     }
-    SCOPEDLOCK(m_lock);
     SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
 
@@ -666,19 +658,15 @@ bool MMKV::fullWriteback() {
 }
 
 bool MMKV::reKey(const std::string &cryptKey) {
-    SCOPEDLOCK(m_lock);
     checkLoadData();
 
     return true;
 }
 
 void MMKV::checkReSetCryptKey(const std::string *cryptKey) {
-    SCOPEDLOCK(m_lock);
 }
 
 void MMKV::checkReSetCryptKey(int fd, int metaFD, std::string *cryptKey) {
-    SCOPEDLOCK(m_lock);
-
     checkReSetCryptKey(cryptKey);
 }
 
@@ -826,7 +814,6 @@ bool MMKV::getStringForKey(const std::string &key, std::string &result) {
     if (key.empty()) {
         return false;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         result = MiniPBCoder::decodeString(data);
@@ -839,7 +826,6 @@ MMBuffer MMKV::getBytesForKey(const std::string &key) {
     if (key.empty()) {
         return MMBuffer(0);
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         return MiniPBCoder::decodeBytes(data);
@@ -851,7 +837,6 @@ bool MMKV::getBoolForKey(const std::string &key, bool defaultValue) {
     if (key.empty()) {
         return defaultValue;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         CodedInputData input(data.getPtr(), data.length());
@@ -864,7 +849,6 @@ int32_t MMKV::getInt32ForKey(const std::string &key, int32_t defaultValue) {
     if (key.empty()) {
         return defaultValue;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         CodedInputData input(data.getPtr(), data.length());
@@ -877,7 +861,6 @@ int64_t MMKV::getInt64ForKey(const std::string &key, int64_t defaultValue) {
     if (key.empty()) {
         return defaultValue;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         CodedInputData input(data.getPtr(), data.length());
@@ -890,7 +873,6 @@ float MMKV::getFloatForKey(const std::string &key, float defaultValue) {
     if (key.empty()) {
         return defaultValue;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         CodedInputData input(data.getPtr(), data.length());
@@ -903,7 +885,6 @@ double MMKV::getDoubleForKey(const std::string &key, double defaultValue) {
     if (key.empty()) {
         return defaultValue;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         CodedInputData input(data.getPtr(), data.length());
@@ -916,7 +897,6 @@ bool MMKV::getVectorForKey(const std::string &key, std::vector<std::string> &res
     if (key.empty()) {
         return false;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (data.length() > 0) {
         result = MiniPBCoder::decodeSet(data);
@@ -929,7 +909,6 @@ size_t MMKV::getValueSizeForKey(const std::string &key, bool actualSize) {
     if (key.empty()) {
         return 0;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     if (actualSize) {
         CodedInputData input(data.getPtr(), data.length());
@@ -945,7 +924,6 @@ int32_t MMKV::writeValueToBuffer(const std::string &key, void *ptr, int32_t size
     if (key.empty()) {
         return -1;
     }
-    SCOPEDLOCK(m_lock);
     auto &data = getDataForKey(key);
     CodedInputData input(data.getPtr(), data.length());
     auto length = input.readInt32();
@@ -967,25 +945,21 @@ int32_t MMKV::writeValueToBuffer(const std::string &key, void *ptr, int32_t size
 #pragma mark - enumerate
 
 bool MMKV::containsKey(const std::string &key) {
-    SCOPEDLOCK(m_lock);
     checkLoadData();
     return m_dic.find(key) != m_dic.end();
 }
 
 size_t MMKV::count() {
-    SCOPEDLOCK(m_lock);
     checkLoadData();
     return m_dic.size();
 }
 
 size_t MMKV::totalSize() {
-    SCOPEDLOCK(m_lock);
     checkLoadData();
     return m_size;
 }
 
 std::vector<std::string> MMKV::allKeys() {
-    SCOPEDLOCK(m_lock);
     checkLoadData();
 
     vector<string> keys;
@@ -999,7 +973,6 @@ void MMKV::removeValueForKey(const std::string &key) {
     if (key.empty()) {
         return;
     }
-    SCOPEDLOCK(m_lock);
     SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
 
@@ -1014,7 +987,6 @@ void MMKV::removeValuesForKeys(const std::vector<std::string> &arrKeys) {
         return removeValueForKey(arrKeys[0]);
     }
 
-    SCOPEDLOCK(m_lock);
     SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
     for (const auto &key : arrKeys) {
@@ -1028,7 +1000,6 @@ void MMKV::removeValuesForKeys(const std::vector<std::string> &arrKeys) {
 #pragma mark - file
 
 void MMKV::sync() {
-    SCOPEDLOCK(m_lock);
     if (m_needLoadFromFile || !isFileValid()) {
         return;
     }
