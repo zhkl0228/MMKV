@@ -60,10 +60,6 @@ class MMKV {
 
     void *m_crypter;
 
-    FileLock m_fileLock;
-    InterProcessLock m_sharedProcessLock;
-    InterProcessLock m_exclusiveProcessLock;
-
     void loadFromFile();
 
     void partialLoadFromFile();
@@ -208,10 +204,6 @@ public:
     void sync();
 
     static bool isFileValid(const std::string &mmapID);
-
-    void lock() { m_exclusiveProcessLock.lock(); }
-    void unlock() { m_exclusiveProcessLock.unlock(); }
-    bool try_lock() { return m_exclusiveProcessLock.try_lock(); }
 };
 
 #endif // MMKV_MMKV_H
