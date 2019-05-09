@@ -72,9 +72,6 @@ MMKV::MMKV(
     , m_crcPath(crcPathWithID(m_mmapID, mode, relativePath))
     , m_metaFile(m_crcPath, DEFAULT_MMAP_SIZE, MMAP_FILE)
     , m_crypter(nullptr)
-    , m_fileLock(m_metaFile.getFd())
-    , m_sharedProcessLock(&m_fileLock, SharedLockType)
-    , m_exclusiveProcessLock(&m_fileLock, ExclusiveLockType)
     , m_isInterProcess((mode & MMKV_MULTI_PROCESS) != 0 || (mode & CONTEXT_MODE_MULTI_PROCESS) != 0)
     , m_isAshmem(false) {
     m_fd = -1;
@@ -87,9 +84,6 @@ MMKV::MMKV(
     m_hasFullWriteback = false;
 
     m_crcDigest = 0;
-
-    m_sharedProcessLock.m_enable = false;
-    m_exclusiveProcessLock.m_enable = false;
 
     // sensitive zone
     {
@@ -242,8 +236,6 @@ void MMKV::loadFromFile() {
                     fullWriteback();
                 }
             } else {
-                SCOPEDLOCK(m_exclusiveProcessLock);
-
                 if (m_actualSize > 0) {
                     writeAcutalSize(0);
                 }
@@ -301,8 +293,6 @@ void MMKV::partialLoadFromFile() {
 
 void MMKV::checkLoadData() {
     if (m_needLoadFromFile) {
-        SCOPEDLOCK(m_sharedProcessLock);
-
         m_needLoadFromFile = false;
         loadFromFile();
         return;
@@ -320,15 +310,11 @@ void MMKV::checkLoadData() {
     if (m_metaInfo.m_sequence != metaInfo.m_sequence) {
         MMKVInfo("[%s] oldSeq %u, newSeq %u", m_mmapID.c_str(), m_metaInfo.m_sequence,
                  metaInfo.m_sequence);
-        SCOPEDLOCK(m_sharedProcessLock);
-
         clearMemoryState();
         loadFromFile();
     } else if (m_metaInfo.m_crcDigest != metaInfo.m_crcDigest) {
         MMKVDebug("[%s] oldCrc %u, newCrc %u", m_mmapID.c_str(), m_metaInfo.m_crcDigest,
                   metaInfo.m_crcDigest);
-        SCOPEDLOCK(m_sharedProcessLock);
-
         size_t fileSize = 0;
         struct stat st = {0};
         if (fstat(m_fd, &st) != -1) {
@@ -347,7 +333,6 @@ void MMKV::checkLoadData() {
 
 void MMKV::clearAll() {
     MMKVInfo("cleaning all key-values from [%s]", m_mmapID.c_str());
-    SCOPEDLOCK(m_exclusiveProcessLock);
 
     if (m_needLoadFromFile) {
         removeFile(m_path.c_str());
@@ -432,7 +417,6 @@ void MMKV::trim() {
     } else if (m_size <= DEFAULT_MMAP_SIZE) {
         return;
     }
-    SCOPEDLOCK(m_exclusiveProcessLock);
 
     fullWriteback();
     auto oldSize = m_size;
@@ -556,7 +540,6 @@ bool MMKV::setDataForKey(MMBuffer &&data, const std::string &key) {
     if (data.length() == 0 || key.empty()) {
         return false;
     }
-    SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
 
     // m_dic[key] = std::move(data);
@@ -592,8 +575,6 @@ bool MMKV::appendDataWithKey(const MMBuffer &data, const std::string &key) {
     size_t size = keyLength + pbRawVarint32Size((int32_t) keyLength);
     // size needed to encode the value
     size += data.length() + pbRawVarint32Size((int32_t) data.length());
-
-    SCOPEDLOCK(m_exclusiveProcessLock);
 
     bool hasEnoughSize = ensureMemorySize(size);
 
@@ -639,7 +620,6 @@ bool MMKV::fullWriteback() {
     }
 
     auto allData = MiniPBCoder::encodeDataWithObject(m_dic);
-    SCOPEDLOCK(m_exclusiveProcessLock);
     if (allData.length() > 0) {
         if (allData.length() + Fixed32Size <= m_size) {
             writeAcutalSize(allData.length());
@@ -973,7 +953,6 @@ void MMKV::removeValueForKey(const std::string &key) {
     if (key.empty()) {
         return;
     }
-    SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
 
     removeDataForKey(key);
@@ -987,7 +966,6 @@ void MMKV::removeValuesForKeys(const std::vector<std::string> &arrKeys) {
         return removeValueForKey(arrKeys[0]);
     }
 
-    SCOPEDLOCK(m_exclusiveProcessLock);
     checkLoadData();
     for (const auto &key : arrKeys) {
         m_dic.erase(key);
@@ -1003,7 +981,6 @@ void MMKV::sync() {
     if (m_needLoadFromFile || !isFileValid()) {
         return;
     }
-    SCOPEDLOCK(m_exclusiveProcessLock);
     if (msync(m_ptr, m_size, MS_SYNC) != 0) {
         MMKVError("fail to msync [%s]:%s", m_mmapID.c_str(), strerror(errno));
     }
