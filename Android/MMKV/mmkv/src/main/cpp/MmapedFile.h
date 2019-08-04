@@ -27,6 +27,8 @@
 
 #define ASHMEM_NAME_DEF "/dev/ashmem"
 
+#define __ANDROID_API_O__ 26
+
 enum : bool { MMAP_FILE = false, MMAP_ASHMEM = true };
 
 extern const int DEFAULT_MMAP_SIZE;
