@@ -26,6 +26,8 @@
 #include <jni.h>
 #include <string>
 
+#define __ANDROID_API_L__ 21
+
 using namespace std;
 
 static jclass g_cls = nullptr;
@@ -87,6 +89,7 @@ extern "C" JNIEXPORT JNICALL jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     // get current API level by accessing android.os.Build.VERSION.SDK_INT
+    /*
     jclass versionClass = env->FindClass("android/os/Build$VERSION");
     if (versionClass) {
         jfieldID sdkIntFieldID = env->GetStaticFieldID(versionClass, "SDK_INT", "I");
@@ -99,6 +102,8 @@ extern "C" JNIEXPORT JNICALL jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     } else {
         MMKVError("fail to get class android.os.Build.VERSION");
     }
+    */
+    g_android_api = 19;
 
     return JNI_VERSION_1_6;
 }
