@@ -28,6 +28,8 @@ enum MMKVRecoverStrategic : int {
     OnErrorRecover,
 };
 
+namespace mmkv {
+
 MMKVRecoverStrategic onMMKVCRCCheckFail(const std::string &mmapID);
 
 MMKVRecoverStrategic onMMKVFileLengthError(const std::string &mmapID);
@@ -37,5 +39,8 @@ void mmkvLog(int level,
              int line,
              const std::string &function,
              const std::string &message);
+} // namespace mmkv
+
+extern int g_android_api;
 
 #endif //MMKV_NATIVE_BRIDGE_H
