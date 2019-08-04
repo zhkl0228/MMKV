@@ -21,6 +21,7 @@
 #include "MMKVLog.h"
 #include "native-bridge.h"
 #include <string>
+#include <stdarg.h>
 
 #ifdef ENABLE_MMKV_LOG
 
